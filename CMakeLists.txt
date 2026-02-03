@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(c_black_hole
   src/main.c
+  src/engine/engine.c
   glad/glad.c
 )
 
