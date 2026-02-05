@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(c_black_hole
   src/main.c
   src/engine/engine.c
+  src/blackhole/blackhole.c
   glad/glad.c
 )
 
@@ -17,14 +18,14 @@ target_include_directories(c_black_hole PRIVATE
 )
 
 find_package(glfw3 REQUIRED)
-target_link_libraries(c_black_hole PRIVATE glfw)
+target_link_libraries(c_black_hole PRIVATE glfw m)
 
 add_custom_target(build
   DEPENDS c_black_hole
 )
 
 add_custom_target(run
-  COMMAND $<TARGET_FILE:c_black_hole>
+  COMMAND ${CMAKE_COMMAND} -DRUN_BINARY=$<TARGET_FILE:c_black_hole> -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/run.cmake
   DEPENDS c_black_hole
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
