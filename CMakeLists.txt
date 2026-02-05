@@ -10,6 +10,7 @@ add_executable(c_black_hole
   src/engine/engine.c
   src/engine/gl_utils.c
   src/blackhole/blackhole.c
+  src/ray/ray.c
   glad/glad.c
 )
 

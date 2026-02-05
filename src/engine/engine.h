@@ -7,9 +7,11 @@ typedef struct {
     GLFWwindow* window;
     unsigned int shaderProgram;
     int u_aspect_loc;
+    int u_color_loc;
     int fb_width;
     int fb_height;
     float aspect;
+    double time_scale;
     int width;
     int height;
 } Engine;

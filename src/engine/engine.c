@@ -45,8 +45,9 @@ static void compile_shader_program(Engine* engine) {
     const char* fragmentShaderSource = \
         "#version 330 core\n"
         "out vec4 FragColor;\n"
+        "uniform vec4 u_color;\n"
         "void main() {\n"
-        "   FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
+        "   FragColor = u_color;\n"
         "}\0";
         
     unsigned int vertexShader = compile_shader(GL_VERTEX_SHADER, vertexShaderSource);
@@ -72,6 +73,7 @@ static void compile_shader_program(Engine* engine) {
     glDeleteShader(fragmentShader);
 
     engine->u_aspect_loc = glGetUniformLocation(engine->shaderProgram, "u_aspect");
+    engine->u_color_loc = glGetUniformLocation(engine->shaderProgram, "u_color");
 }
 
 int engine_init(Engine* engine, int width, int height, char* name) {
@@ -80,6 +82,7 @@ int engine_init(Engine* engine, int width, int height, char* name) {
     engine->fb_width = width;
     engine->fb_height = height;
     engine->aspect = 1.0f;
+    engine->time_scale = 1.0;
 
     if (!glfwInit()) {
         fprintf(stderr, "Failed to init GLFW\n");
