@@ -8,12 +8,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(c_black_hole
   src/main.c
   src/engine/engine.c
+  src/engine/gl_utils.c
   src/blackhole/blackhole.c
   glad/glad.c
 )
 
 target_include_directories(c_black_hole PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${CMAKE_CURRENT_SOURCE_DIR}/glad/include
 )
 

@@ -1,10 +1,8 @@
 #include "blackhole.h"
+#include "engine/gl_utils.h"
+#include "render/render_scale.h"
 #include <math.h>
 #include <stddef.h>
-
-static double schwarzschild_radius(double mass) {
-    return (2 * G * mass) / (C * C);
-}
 
 int blackhole_init(BlackHole* bh, double x, double y, double mass) {
     if (!bh) return -1; 
@@ -15,35 +13,24 @@ int blackhole_init(BlackHole* bh, double x, double y, double mass) {
 
     bh->schwarz_r = schwarzschild_radius(mass);
 
-    // Generate VB0 + VAO
-    glGenBuffers(1, &bh->VBO);
-    glGenVertexArrays(1, &bh->VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, bh->VBO);
-    glBindVertexArray(bh->VAO);
-
-    // Allocate the buffer once (data will be filled on draw)
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        (_NUM_SEGMENTS + 2) * 2 * sizeof(float), // See `blackhole_draw` for size reasoning
-        NULL,
+    if (gl_setup_vao_vbo(
+        &bh->VAO,
+        &bh->VBO,
+        (_NUM_SEGMENTS + 2) * 2 * sizeof(float),
+        2,
         GL_DYNAMIC_DRAW
-    );
-    
-    // Defines how the GPU reads VBO. start=0; num_components=2; data_type=float; normalise=false; stride=2*sizeof(float); offset=0;
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);  // This just turns on attribute slot 0
-
-    glBindVertexArray(0);
+    ) != 0) {
+        return -1;
+    }
 
     return 0;
 }
 
 void blackhole_draw(BlackHole *bh) {
-    const double render_scale = TARGET_NDC_RADIUS / schwarzschild_radius(REFERENCE_MASS);
-    const float draw_r = (float)(bh->schwarz_r * render_scale);
-    const float cx = (float)(bh->x * render_scale);
-    const float cy = (float)(bh->y * render_scale);
+    const double scale = render_scale();
+    const float draw_r = (float)(bh->schwarz_r * scale);
+    const float cx = (float)(bh->x * scale);
+    const float cy = (float)(bh->y * scale);
 
     // Define the vertex buffer
     // Each segment needs a vertex (+ center + closing vertex (since it's a triangle fan)), and each vertex needs 2 data points (x, y).
@@ -80,14 +67,5 @@ void blackhole_draw(BlackHole *bh) {
 
 void blackhole_destroy(BlackHole* bh) {
     if (!bh) return;
-
-    if (bh->VBO) {
-        glDeleteBuffers(1, &bh->VBO);
-        bh->VBO = 0;
-    }
-
-    if (bh->VAO) {
-        glDeleteVertexArrays(1, &bh->VAO);
-        bh->VAO = 0;
-    }
+    gl_destroy_vao_vbo(&bh->VAO, &bh->VBO);
 }
