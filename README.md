@@ -16,8 +16,9 @@ cmake --build build
 
 Run (custom target):
 ```bash
-cmake --build build --target run
+RUN_GRAPHICS=1 cmake --build build --target run
 ```
+or I have set up a shortcut script at `./scripts/run.sh`.
 
 ## Tooling Notes
 - `compile_commands.json` is generated in `build/` by CMake and is symlinked at the project root so clangd picks it up automatically.
