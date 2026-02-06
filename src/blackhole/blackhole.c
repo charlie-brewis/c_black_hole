@@ -18,7 +18,10 @@ int blackhole_init(BlackHole* bh, double x, double y, double mass) {
         &bh->VBO,
         (_NUM_SEGMENTS + 2) * 2 * sizeof(float),
         2,
-        GL_DYNAMIC_DRAW
+        GL_DYNAMIC_DRAW,
+        0,
+        0,
+        0
     ) != 0) {
         return -1;
     }

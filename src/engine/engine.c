@@ -36,18 +36,24 @@ static void compile_shader_program(Engine* engine) {
     const char* vertexShaderSource = \
         "#version 330 core\n"
         "layout(location = 0) in vec2 aPos;\n"
+        "layout(location = 1) in float aAlpha;\n"
         "uniform float u_aspect;\n"
+        "out float v_alpha;\n"
         "void main() {\n"
         "  vec2 pos = aPos;\n"
         "  pos.x *= u_aspect;\n"
         "  gl_Position = vec4(pos, 0.0, 1.0);\n"
+        "  v_alpha = aAlpha;\n"
         "}\0";
     const char* fragmentShaderSource = \
         "#version 330 core\n"
         "out vec4 FragColor;\n"
         "uniform vec4 u_color;\n"
+        "in float v_alpha;\n"
         "void main() {\n"
-        "   FragColor = u_color;\n"
+        "   vec3 rgb = u_color.rgb * v_alpha;\n"
+        "   float a = u_color.a * v_alpha;\n"
+        "   FragColor = vec4(rgb, a);\n"
         "}\0";
         
     unsigned int vertexShader = compile_shader(GL_VERTEX_SHADER, vertexShaderSource);
