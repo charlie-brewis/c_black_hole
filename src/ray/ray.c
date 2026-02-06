@@ -1,11 +1,10 @@
 #include "ray.h"
 #include "engine/gl_utils.h"
-#include "engine/engine.h"
 #include "render/render_scale.h"
 #include <math.h>
 #include <stdlib.h>
 
-enum { RAY_TRAIL_CAPACITY = 2048 };
+static const size_t RAY_TRAIL_CAPACITY = 2048;
 static const float RAY_TRAIL_MIN_ALPHA = 0.2f;
 
 static void ray_trail_push(Ray* ray, float x, float y) {
