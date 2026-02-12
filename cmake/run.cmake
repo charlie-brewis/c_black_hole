@@ -7,8 +7,13 @@ if(NOT DEFINED ENV{RUN_GRAPHICS})
   return()
 endif()
 
+set(run_args "")
+if(DEFINED ENV{RUN_ARGS})
+  set(run_args $ENV{RUN_ARGS})
+endif()
+
 execute_process(
-  COMMAND "${RUN_BINARY}"
+  COMMAND "${RUN_BINARY}" ${run_args}
   RESULT_VARIABLE run_result
 )
 

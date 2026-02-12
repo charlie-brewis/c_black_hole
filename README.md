@@ -20,6 +20,12 @@ RUN_GRAPHICS=1 cmake --build build --target run
 ```
 or I have set up a shortcut script at `./scripts/run.sh`.
 
+Run with script (optional ray count, default 10):
+```bash
+./scripts/run.sh
+./scripts/run.sh 25
+```
+
 ## Tooling Notes
 - `compile_commands.json` is generated in `build/` by CMake and is symlinked at the project root so clangd picks it up automatically.
 - GLAD is compiled as a separate source (`glad/glad.c`) and included via headers (`<glad/glad.h>`).

@@ -6,20 +6,27 @@
 
 #include <stdlib.h>
 
-#define NUM_RAYS 7
+#define DEFAULT_NUM_RAYS 10
 
-int main() {
+int main(int argc, char** argv) {
+    int num_rays = DEFAULT_NUM_RAYS;
+    if (argc > 1) {
+        const int parsed = atoi(argv[1]);
+        if (parsed > 0) {
+            num_rays = parsed;
+        }
+    }
     Engine engine;
     if (engine_init(&engine, 800, 600, "Black Hole Simulation") != 0) return -1;
     
     BlackHole sagA;
     blackhole_init(&sagA, 0.0, 0.0, 8.54e36);
 
-    Ray* rays = (Ray*) calloc(NUM_RAYS, sizeof(Ray));
+    Ray* rays = (Ray*) calloc(num_rays, sizeof(Ray));
     float spawn_margin = 0.05f; // 5% padding
     float span = 2.0f - 2.0f * spawn_margin;
-    float y_step = (NUM_RAYS > 1) ? (span / (NUM_RAYS - 1)) : 0.0f;
-    for (int i = 0; i < NUM_RAYS; i++) {
+    float y_step = (num_rays > 1) ? (span / (num_rays - 1)) : 0.0f;
+    for (int i = 0; i < num_rays; i++) {
         float y_ndc = -1.0f + spawn_margin + y_step * i;  // Evenly spaced, centered around y=0
         ray_init(
             &rays[i], 
@@ -50,7 +57,7 @@ int main() {
         if (engine.u_color_loc >= 0) {
             glUniform4f(engine.u_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
         }
-        for (int i = 0; i < NUM_RAYS; i++) {
+        for (int i = 0; i < num_rays; i++) {
             ray_step(&rays[i], &sagA, dt, engine.time_scale);
             ray_draw(&rays[i]);
         }
@@ -58,7 +65,7 @@ int main() {
         engine_end_frame(&engine);
     }
     
-    for (int i = 0; i < NUM_RAYS; i++) {
+    for (int i = 0; i < num_rays; i++) {
         ray_destroy(&rays[i]);
     }
     free(rays);
