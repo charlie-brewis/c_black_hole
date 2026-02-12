@@ -51,7 +51,7 @@ int main() {
             glUniform4f(engine.u_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
         }
         for (int i = 0; i < NUM_RAYS; i++) {
-            ray_step(&rays[i], dt, engine.time_scale);
+            ray_step(&rays[i], &sagA, dt, engine.time_scale);
             ray_draw(&rays[i]);
         }
 

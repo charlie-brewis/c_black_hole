@@ -1,5 +1,7 @@
 #include "ray.h"
+#include "blackhole/blackhole.h"
 #include "engine/gl_utils.h"
+#include "physics/constants.h"
 #include "render/render_scale.h"
 #include <math.h>
 #include <stdlib.h>
@@ -25,6 +27,10 @@ static void ray_trail_push(Ray* ray, float x, float y) {
 int ray_init(Ray *ray, double x_pos, double y_pos, double x_ang, double y_ang) {
     if (!ray) return -1;
     
+    // ASSUMPTION: 1 black hole centered around 0,0 
+    ray->r = hypot(x_pos, y_pos);
+    ray->phi = atan2(y_pos, x_pos);
+
     ray->x_pos = x_pos;
     ray->y_pos = y_pos;
     ray->x_ang = x_ang;
@@ -70,12 +76,17 @@ int ray_init(Ray *ray, double x_pos, double y_pos, double x_ang, double y_ang) {
     return 0;
 }
 
-void ray_step(Ray* ray, double dt_seconds, double time_scale) {
+void ray_step(Ray* ray, BlackHole* bh, double dt_seconds, double time_scale) {
     if (!ray) return;
 
-    const double scaled_dt = dt_seconds * time_scale; 
-    ray->x_pos += ray->x_ang * C * scaled_dt;
-    ray->y_pos += ray->y_ang * C * scaled_dt;
+    ray->r = hypot(ray->x_pos, ray->y_pos);
+    if (ray->r <= bh->schwarz_r) return;  // Don't step if within the event horizon
+
+    // Updates r & phi using the geodesic equations (affine increment in seconds)
+    const double scaled_dt = dt_seconds * time_scale;
+    geodesic(ray, bh->schwarz_r, scaled_dt);
+
+    // Push tail
     ray_trail_push(ray, (float)ray->x_pos, (float)ray->y_pos);
 }
 
