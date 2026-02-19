@@ -12,3 +12,4 @@ typedef struct {
 } GeodesicState;
 
 GeodesicState geodesic(Ray* ray, double schwarz_r, double dgam);
+GeodesicState rk4Step(Ray* ray, double schwarz_r, double dgam);

@@ -100,7 +100,7 @@ void ray_step(Ray* ray, BlackHole* bh, double dt_seconds, double time_scale) {
 
     // Updates r & phi using the geodesic equations (affine increment in seconds)
     const double scaled_dt = dt_seconds * time_scale;
-    GeodesicState next = geodesic(ray, bh->schwarz_r, scaled_dt);
+    GeodesicState next = rk4Step(ray, bh->schwarz_r, scaled_dt);
 
     ray->r = next.r;
     ray->phi = next.phi;
