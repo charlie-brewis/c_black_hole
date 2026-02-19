@@ -34,9 +34,9 @@ static GeodesicState geodesic_state_add(const GeodesicState* state, const double
  * I.e., calculates the shortest path for light on a curved surface  
  *
  * This is an integration using Euler's method, meaning it calculates 
- * derivatives in a constant step size (dgam) and applies them to approximate.
+ * derivatives in a constant step size (dlambd) and applies them to approximate.
 */
-GeodesicState geodesic(Ray* ray, double schwarz_r, double dgam) {
+GeodesicState geodesic(Ray* ray, double schwarz_r, double dlambd) {
     GeodesicState state = {
         .r = ray->r,
         .phi = ray->phi,
@@ -51,12 +51,12 @@ GeodesicState geodesic(Ray* ray, double schwarz_r, double dgam) {
     const double ddr = derivs[2];
     const double ddphi = derivs[3];
 
-    dr += ddr * dgam;
-    dphi += ddphi * dgam;
+    dr += ddr * dlambd;
+    dphi += ddphi * dlambd;
 
     // Assign new values back to state
-    state.r += dr * dgam;
-    state.phi += dphi * dgam;
+    state.r += dr * dlambd;
+    state.phi += dphi * dlambd;
     state.dr = dr;
     state.dphi = dphi;
 
@@ -68,7 +68,7 @@ GeodesicState geodesic(Ray* ray, double schwarz_r, double dgam) {
  * the next 4 steps and averaging the results. This is
  * will give us much more realisitc motion than only single-step.
 */ 
-GeodesicState rk4Step(Ray* ray, double schwarz_r, double dgam) {
+GeodesicState rk4Step(Ray* ray, double schwarz_r, double dlambd) {
     GeodesicState y0 = {
         .r = ray->r,
         .phi = ray->phi,
@@ -79,20 +79,20 @@ GeodesicState rk4Step(Ray* ray, double schwarz_r, double dgam) {
     double k1[4], k2[4], k3[4], k4[4];
     geodesic_derivs(&y0, schwarz_r, ray->E, k1);
 
-    const GeodesicState y1 = geodesic_state_add(&y0, k1, 0.5 * dgam);
+    const GeodesicState y1 = geodesic_state_add(&y0, k1, 0.5 * dlambd);
     geodesic_derivs(&y1, schwarz_r, ray->E, k2);
 
-    const GeodesicState y2 = geodesic_state_add(&y0, k2, 0.5 * dgam);
+    const GeodesicState y2 = geodesic_state_add(&y0, k2, 0.5 * dlambd);
     geodesic_derivs(&y2, schwarz_r, ray->E, k3);
 
-    const GeodesicState y3 = geodesic_state_add(&y0, k3, dgam);
+    const GeodesicState y3 = geodesic_state_add(&y0, k3, dlambd);
     geodesic_derivs(&y3, schwarz_r, ray->E, k4);
 
     const double inv6 = 1.0 / 6.0;
-    const double r_next    = y0.r    + dgam * inv6 * (k1[0] + 2.0 * k2[0] + 2.0 * k3[0] + k4[0]);
-    const double phi_next  = y0.phi  + dgam * inv6 * (k1[1] + 2.0 * k2[1] + 2.0 * k3[1] + k4[1]);
-    const double dr_next   = y0.dr   + dgam * inv6 * (k1[2] + 2.0 * k2[2] + 2.0 * k3[2] + k4[2]);
-    const double dphi_next = y0.dphi + dgam * inv6 * (k1[3] + 2.0 * k2[3] + 2.0 * k3[3] + k4[3]);
+    const double r_next    = y0.r    + dlambd * inv6 * (k1[0] + 2.0 * k2[0] + 2.0 * k3[0] + k4[0]);
+    const double phi_next  = y0.phi  + dlambd * inv6 * (k1[1] + 2.0 * k2[1] + 2.0 * k3[1] + k4[1]);
+    const double dr_next   = y0.dr   + dlambd * inv6 * (k1[2] + 2.0 * k2[2] + 2.0 * k3[2] + k4[2]);
+    const double dphi_next = y0.dphi + dlambd * inv6 * (k1[3] + 2.0 * k2[3] + 2.0 * k3[3] + k4[3]);
 
     GeodesicState next = {
         .r = r_next,

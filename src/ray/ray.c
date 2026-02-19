@@ -39,22 +39,22 @@ int ray_init(Ray *ray, BlackHole* bh,  double x_pos, double y_pos) {
     ray_init_derivs(ray);
 
     // Define physical concervation values. See equations:
-    // L = r^2 * (dphi / dgam)
-    // E = f * (dt / dgam)
+    // L = r^2 * (dphi / dlambd)
+    // E = f * (dt / dlambd)
     //  where
     //      f = 1 - r_s / r
     //
     // The null condition must hold for a null geodesic:
-    // 0 = -f(dt/dgam)^2 + 1/f * (dr/dgam)^2 + r^2(dphi/dgam)^2 
-    // Solved for dt/dgam:
-    // dt/dgam = sqrt( dr^2/f^2 + r^2dphi^2/f )
+    // 0 = -f(dt/dlambd)^2 + 1/f * (dr/dlambd)^2 + r^2(dphi/dlambd)^2 
+    // Solved for dt/dlambd:
+    // dt/dlambd = sqrt( dr^2/f^2 + r^2dphi^2/f )
     double f = 1.0 - (bh->schwarz_r / ray->r);  // Schwarzchild metric factor (0 at event horizon, 1 infinately far away)
     ray->L = ray->r * ray->r * ray->dphi;
-    double dt_dgam = sqrt(
+    double dt_dlambd = sqrt(
         (ray->dr * ray->dr) / (f * f) + 
         (ray->r * ray->r * ray->dphi * ray->dphi) / f
     );
-    ray->E = f * dt_dgam;
+    ray->E = f * dt_dlambd;
 
     ray->x_pos = x_pos;
     ray->y_pos = y_pos;
