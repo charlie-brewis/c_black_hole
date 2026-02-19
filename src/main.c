@@ -30,10 +30,9 @@ int main(int argc, char** argv) {
         float y_ndc = -1.0f + spawn_margin + y_step * i;  // Evenly spaced, centered around y=0
         ray_init(
             &rays[i], 
+            &sagA,
             ndc_to_meters(-1.0f / engine.aspect),
-            ndc_to_meters(y_ndc),
-            1.0,
-            0.0
+            ndc_to_meters(y_ndc)
         );
     }
 

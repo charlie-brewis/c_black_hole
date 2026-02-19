@@ -9,6 +9,12 @@
 static const size_t RAY_TRAIL_CAPACITY = 2048;
 static const float RAY_TRAIL_MIN_ALPHA = 0.2f;
 
+static void ray_init_derivs(Ray* ray) {
+    // Assume rays are launched along +X (parallel incoming light).
+    ray->dr = C * cos(ray->phi);
+    ray->dphi = (ray->r == 0.0) ? 0.0 : (-C * sin(ray->phi) / ray->r);
+}
+
 static void ray_trail_push(Ray* ray, float x, float y) {
     if (!ray || !ray->trail_positions || ray->trail_capacity == 0) return;
 
@@ -24,22 +30,34 @@ static void ray_trail_push(Ray* ray, float x, float y) {
     }
 }
 
-int ray_init(Ray *ray, double x_pos, double y_pos, double x_ang, double y_ang) {
+int ray_init(Ray *ray, BlackHole* bh,  double x_pos, double y_pos) {
     if (!ray) return -1;
     
     // ASSUMPTION: 1 black hole centered around 0,0 
     ray->r = hypot(x_pos, y_pos);
     ray->phi = atan2(y_pos, x_pos);
+    ray_init_derivs(ray);
+
+    // Define physical concervation values. See equations:
+    // L = r^2 * (dphi / dgam)
+    // E = f * (dt / dgam)
+    //  where
+    //      f = 1 - r_s / r
+    //
+    // The null condition must hold for a null geodesic:
+    // 0 = -f(dt/dgam)^2 + 1/f * (dr/dgam)^2 + r^2(dphi/dgam)^2 
+    // Solved for dt/dgam:
+    // dt/dgam = sqrt( dr^2/f^2 + r^2dphi^2/f )
+    double f = 1.0 - (bh->schwarz_r / ray->r);  // Schwarzchild metric factor (0 at event horizon, 1 infinately far away)
+    ray->L = ray->r * ray->r * ray->dphi;
+    double dt_dgam = sqrt(
+        (ray->dr * ray->dr) / (f * f) + 
+        (ray->r * ray->r * ray->dphi * ray->dphi) / f
+    );
+    ray->E = f * dt_dgam;
 
     ray->x_pos = x_pos;
     ray->y_pos = y_pos;
-    ray->x_ang = x_ang;
-    ray->y_ang = y_ang;
-    const double mag = sqrt((x_ang * x_ang) + (y_ang * y_ang));
-    if (mag > 0.0) {
-        ray->x_ang /= mag;
-        ray->y_ang /= mag;
-    }
 
     ray->trail_capacity = RAY_TRAIL_CAPACITY;
     ray->trail_count = 0;
@@ -78,13 +96,18 @@ int ray_init(Ray *ray, double x_pos, double y_pos, double x_ang, double y_ang) {
 
 void ray_step(Ray* ray, BlackHole* bh, double dt_seconds, double time_scale) {
     if (!ray) return;
-
-    ray->r = hypot(ray->x_pos, ray->y_pos);
     if (ray->r <= bh->schwarz_r) return;  // Don't step if within the event horizon
 
     // Updates r & phi using the geodesic equations (affine increment in seconds)
     const double scaled_dt = dt_seconds * time_scale;
-    geodesic(ray, bh->schwarz_r, scaled_dt);
+    GeodesicState next = geodesic(ray, bh->schwarz_r, scaled_dt);
+
+    ray->r = next.r;
+    ray->phi = next.phi;
+    ray->dr = next.dr;
+    ray->dphi = next.dphi;
+    ray->x_pos = cos(ray->phi) * ray->r;
+    ray->y_pos = sin(ray->phi) * ray->r;
 
     // Push tail
     ray_trail_push(ray, (float)ray->x_pos, (float)ray->y_pos);

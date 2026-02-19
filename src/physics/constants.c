@@ -1,35 +1,64 @@
 #include "constants.h"
 #include <math.h>
 
-void geodesic(Ray* ray, double schwarz_r, double dgam) {
-    const double r = ray->r;
-    const double phi = ray->phi;
-    const double vx = ray->x_ang * C;
-    const double vy = ray->y_ang * C;
-    double dr = (ray->x_pos * vx + ray->y_pos * vy) / ray->r;
-    double dphi = (ray->x_pos * vy - ray->y_pos * vx) / (ray->r * ray->r);
+static void geodesic_derivs(const GeodesicState* state, double schwarz_r, double E, double out[4]) {
+    const double r = state->r;
+    const double dphi = state->dphi;
+    const double dr = state->dr;
+    const double f = 1.0 - schwarz_r / r;
+    const double dt_dlambda = E / f;
 
-    const double ddr = r * dphi*dphi - C*C * schwarz_r / (2.0 * r*r);
-    const double ddphi = -2.0 * dr * dphi / r;
+    // State derivatives: [r, phi, dr, dphi]
+    out[0] = dr;
+    out[1] = dphi;
+    // FULL Schwarzchild null radial equation
+    out[2] = 
+        - (schwarz_r / (2.0 * r * r)) * f * (dt_dlambda * dt_dlambda)
+        + (schwarz_r / (2.0 * r * r * f)) * (dr * dr)
+        + (r - schwarz_r) * (dphi * dphi);
+    out[3] = -2.0 * dr * dphi / r;
+}
+
+static GeodesicState geodesic_state_add(const GeodesicState* state, const double derivs[4], double scale) {
+    GeodesicState next = {
+        .r = state->r + scale * derivs[0],
+        .phi = state->phi + scale * derivs[1],
+        .dr = state->dr + scale * derivs[2],
+        .dphi = state->dphi + scale * derivs[3],
+    };
+    return next;
+}
+
+/*
+ * Solves the einstein geodesic field equation using the Schwarzchild Method
+ * I.e., calculates the shortest path for light on a curved surface  
+ *
+ * This is an integration using Euler's method, meaning it calculates 
+ * derivatives in a constant step size (dgam) and applies them to approximate.
+*/
+GeodesicState geodesic(Ray* ray, double schwarz_r, double dgam) {
+    GeodesicState state = {
+        .r = ray->r,
+        .phi = ray->phi,
+        .dr = ray->dr,
+        .dphi = ray->dphi,
+    };
+    double derivs[4];
+    geodesic_derivs(&state, schwarz_r, ray->E, derivs);
+
+    double dr = state.dr;
+    double dphi = state.dphi;
+    const double ddr = derivs[2];
+    const double ddphi = derivs[3];
 
     dr += ddr * dgam;
     dphi += ddphi * dgam;
 
-    ray->r += dr * dgam;
-    ray->phi += dphi * dgam;
+    // Assign new values back to state
+    state.r += dr * dgam;
+    state.phi += dphi * dgam;
+    state.dr = dr;
+    state.dphi = dphi;
 
-    // Update direction from the integrated polar derivatives.
-    const double cos_phi = cos(ray->phi);
-    const double sin_phi = sin(ray->phi);
-    const double vx_p = dr * cos_phi - ray->r * sin_phi * dphi;
-    const double vy_p = dr * sin_phi + ray->r * cos_phi * dphi;
-    const double mag = hypot(vx_p, vy_p);
-    if (mag > 0.0) {
-        ray->x_ang = vx_p / mag;
-        ray->y_ang = vy_p / mag;
-    }
-    
-    // Update position from the integrated polar derivatives
-    ray->x_pos = cos(ray->phi) * ray->r;
-    ray->y_pos = sin(ray->phi) * ray->r;
+    return state;
 }
