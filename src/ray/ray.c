@@ -9,10 +9,11 @@
 static const size_t RAY_TRAIL_CAPACITY = 2048;
 static const float RAY_TRAIL_MIN_ALPHA = 0.2f;
 
-static void ray_init_derivs(Ray* ray) {
-    // Assume rays are launched along +X (parallel incoming light).
-    ray->dr = C * cos(ray->phi);
-    ray->dphi = (ray->r == 0.0) ? 0.0 : (-C * sin(ray->phi) / ray->r);
+static void ray_init_derivs(Ray* ray, double init_angle) {
+    // Initial direction in world-space (radians from +X).
+    const double delta = init_angle - ray->phi;
+    ray->dr = C * cos(delta);
+    ray->dphi = (ray->r == 0.0) ? 0.0 : (C * sin(delta) / ray->r);
 }
 
 static void ray_trail_push(Ray* ray, float x, float y) {
@@ -30,13 +31,18 @@ static void ray_trail_push(Ray* ray, float x, float y) {
     }
 }
 
-int ray_init(Ray *ray, BlackHole* bh,  double x_pos, double y_pos) {
+int ray_init(Ray *ray, BlackHole* bh,  double x, double y, double init_angle) {
     if (!ray) return -1;
     
-    // ASSUMPTION: 1 black hole centered around 0,0 
-    ray->r = hypot(x_pos, y_pos);
-    ray->phi = atan2(y_pos, x_pos);
-    ray_init_derivs(ray);
+    ray->x = x;
+    ray->y = y;
+
+    // Position relative to the black hole center.
+    const double dx = ray->x - bh->x;
+    const double dy = ray->y - bh->y;
+    ray->r = sqrt(dx * dx + dy * dy);
+    ray->phi = atan2(dy, dx);
+    ray_init_derivs(ray, init_angle);
 
     // Define physical concervation values. See equations:
     // L = r^2 * (dphi / dlambd)
@@ -55,9 +61,6 @@ int ray_init(Ray *ray, BlackHole* bh,  double x_pos, double y_pos) {
         (ray->r * ray->r * ray->dphi * ray->dphi) / f
     );
     ray->E = f * dt_dlambd;
-
-    ray->x_pos = x_pos;
-    ray->y_pos = y_pos;
 
     ray->trail_capacity = RAY_TRAIL_CAPACITY;
     ray->trail_count = 0;
@@ -90,7 +93,7 @@ int ray_init(Ray *ray, BlackHole* bh,  double x_pos, double y_pos) {
         return -1;
     }
 
-    ray_trail_push(ray, (float)ray->x_pos, (float)ray->y_pos);
+    ray_trail_push(ray, (float)ray->x, (float)ray->y);
     return 0;
 }
 
@@ -106,11 +109,11 @@ void ray_step(Ray* ray, BlackHole* bh, double dt_seconds, double time_scale) {
     ray->phi = next.phi;
     ray->dr = next.dr;
     ray->dphi = next.dphi;
-    ray->x_pos = cos(ray->phi) * ray->r;
-    ray->y_pos = sin(ray->phi) * ray->r;
+    ray->x = bh->x + cos(ray->phi) * ray->r;
+    ray->y = bh->y + sin(ray->phi) * ray->r;
 
     // Push tail
-    ray_trail_push(ray, (float)ray->x_pos, (float)ray->y_pos);
+    ray_trail_push(ray, (float)ray->x, (float)ray->y);
 }
 
 void ray_draw(Ray *ray) {

@@ -6,8 +6,8 @@
 
 typedef struct {
     // -- Cartesian Coordinates --
-    double x_pos;
-    double y_pos;
+    double x;
+    double y;
     
     // -- Polar coordinates --
     // r: distance from black hole
@@ -32,7 +32,7 @@ typedef struct {
     float* trail_staging;   // x,y,alpha interleaved for GPU
 } Ray;
 
-int ray_init(Ray* ray, BlackHole* bh,  double x_pos, double y_pos); 
+int ray_init(Ray* ray, BlackHole* bh,  double x, double y, double init_angle); 
 void ray_step(Ray* ray, BlackHole* bh,  double dt_seconds, double time_scale);
 void ray_draw(Ray* ray);
 void ray_destroy(Ray* ray);

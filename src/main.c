@@ -4,6 +4,7 @@
 #include "render/render_scale.h"
 #include <GLFW/glfw3.h>
 
+#include <math.h>
 #include <stdlib.h>
 
 #define DEFAULT_NUM_RAYS 10
@@ -23,16 +24,15 @@ int main(int argc, char** argv) {
     blackhole_init(&sagA, 0.0, 0.0, 8.54e36);
 
     Ray* rays = (Ray*) calloc(num_rays, sizeof(Ray));
-    float spawn_margin = 0.05f; // 5% padding
-    float span = 2.0f - 2.0f * spawn_margin;
-    float y_step = (num_rays > 1) ? (span / (num_rays - 1)) : 0.0f;
+    const double angle_step = (num_rays > 0) ? (2.0 * M_PI / (double)num_rays) : 0.0;
     for (int i = 0; i < num_rays; i++) {
-        float y_ndc = -1.0f + spawn_margin + y_step * i;  // Evenly spaced, centered around y=0
+        const double angle = angle_step * (double)i;
         ray_init(
             &rays[i], 
             &sagA,
-            ndc_to_meters(-1.0f / engine.aspect),
-            ndc_to_meters(y_ndc)
+            sagA.schwarz_r * 1.5,
+            ndc_to_meters(0.0f),
+            angle
         );
     }
 
